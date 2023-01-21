@@ -14,7 +14,7 @@ public class DataManager : MonoBehaviour
     void Start()
     {
         //GameManager.instance.OnItemsMenu += CreateButtons;
-        GameManager.instance.OnBoxObjetosOpen += CreateButtons;
+        GameManager.Instance.OnBoxObjetosOpen += CreateButtons;
     }
 
     private void CreateButtons()
@@ -31,6 +31,6 @@ public class DataManager : MonoBehaviour
         }
 
         //GameManager.instance.OnItemsMenu -= CreateButtons;
-        GameManager.instance.OnBoxObjetosOpen -= CreateButtons;
+        GameManager.Instance.OnBoxObjetosOpen -= CreateButtons;
     }
 }

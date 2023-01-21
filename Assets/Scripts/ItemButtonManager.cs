@@ -48,7 +48,7 @@ void Start()
 
         var button = GetComponent<Button>();
         //button.onClick.AddListener(GameManager.instance.ARPosition);
-        button.onClick.AddListener(GameManager.instance.ARPositionObjectMenu);
+        button.onClick.AddListener(GameManager.Instance.ARPositionObjectMenu);
         button.onClick.AddListener(Create3DModel);
 
         interactionsManager = FindObjectOfType<ARInteractionsManager>();
@@ -58,7 +58,19 @@ void Start()
     private void Create3DModel()
     {
         //interactionsManager.Item3DModel = Instantiate(item3DModel);
-        StartCoroutine(DownLoadAssetBundle(urlBundleModel));
+        GameObject result = ApplicationAnchorsManagerServer.Instance.CheckBundle(itemName);
+
+        if (result == null)
+        {
+            StartCoroutine(DownLoadAssetBundle(urlBundleModel));
+        }
+        else
+        {
+            GameObject tempGO = Instantiate(result);
+            tempGO.name = itemName;
+            interactionsManager.Item3DModel = tempGO;
+        }
+
     }
 
     IEnumerator DownLoadAssetBundle(string urlAssetBundle)
@@ -70,7 +82,11 @@ void Start()
             AssetBundle model3D = DownloadHandlerAssetBundle.GetContent(serverRequest);
             if(model3D != null)
             {
-                interactionsManager.Item3DModel = Instantiate(model3D.LoadAsset(model3D.GetAllAssetNames()[0]) as GameObject);
+                GameObject tempARModel = Instantiate(model3D.LoadAsset(model3D.GetAllAssetNames()[0]) as GameObject);
+                AssetBundle.UnloadAllAssetBundles(false);
+                tempARModel.name = itemName;
+                interactionsManager.Item3DModel = tempARModel;
+                ApplicationAnchorsManagerServer.Instance.AddBundle(tempARModel);
 
             }
             else

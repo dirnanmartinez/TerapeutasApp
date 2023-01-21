@@ -1,3 +1,4 @@
+using Microsoft.Azure.SpatialAnchors.Unity.ARFoundation;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,9 +9,8 @@ using UnityEngine.XR.ARSubsystems;
 
 public class ARInteractionsManager : MonoBehaviour
 {
-
     [SerializeField] private Camera aRCamera;
-    private ARRaycastManager ARRaycastManager;
+    [SerializeField] private ARRaycastManager aRRaycastManager;
     private List<ARRaycastHit> hits = new List<ARRaycastHit>();
 
     private GameObject aRPointer;
@@ -41,17 +41,18 @@ public class ARInteractionsManager : MonoBehaviour
     void Start()
     {
         aRPointer = transform.GetChild(0).gameObject;
-        ARRaycastManager = FindObjectOfType<ARRaycastManager>();
+        //aRRaycastManager = FindObjectOfType<ARRaycastManager>();
         //GameManager.instance.OnMainMenu += SetItemPosition;
-        GameManager.instance.OnBoxObjetosOpen += SetItemPosition;
+        GameManager.Instance.OnBoxObjetosOpen += SetItemPosition;
     }
 
     private void SetItemPosition()
     {
-        if(item3DModel != null)
+        if (item3DModel != null)
         {
             item3DModel.transform.parent = null;
             aRPointer.SetActive(false);
+            GameManager.Instance.ARObjectPlaced(item3DModel);
             item3DModel = null;
         }
     }
@@ -62,7 +63,7 @@ public class ARInteractionsManager : MonoBehaviour
         if (isInitialPosition)
         {
             Vector2 middlePointScreen = new Vector2(Screen.width / 2, Screen.height / 2);
-            ARRaycastManager.Raycast(middlePointScreen, hits, TrackableType.Planes);
+            aRRaycastManager.Raycast(middlePointScreen, hits, TrackableType.Planes);
             if (hits.Count > 0)
             {
                 transform.position = hits[0].pose.position;
@@ -75,16 +76,16 @@ public class ARInteractionsManager : MonoBehaviour
         if (Input.touchCount > 0)
         {
             Touch touchOne = Input.GetTouch(0);
-            if(touchOne.phase == TouchPhase.Began)
+            if (touchOne.phase == TouchPhase.Began)
             {
                 var touchPosition = touchOne.position;
-                isOverUI = isTapOverUI(touchPosition);
-                isOver3DModel = isTapOver3DModel(touchPosition);
+                isOverUI = IsTapOverUI(touchPosition);
+                isOver3DModel = IsTapOver3DModel(touchPosition);
             }
 
-            if(touchOne.phase == TouchPhase.Moved)
+            if (touchOne.phase == TouchPhase.Moved)
             {
-                if(ARRaycastManager.Raycast(touchOne.position, hits, TrackableType.Planes))
+                if (aRRaycastManager.Raycast(touchOne.position, hits, TrackableType.Planes))
                 {
                     Pose hitPose = hits[0].pose;
                     if (!isOverUI && isOver3DModel)
@@ -94,26 +95,43 @@ public class ARInteractionsManager : MonoBehaviour
                 }
             }
 
-            if(Input.touchCount == 2)
+            if (Input.touchCount == 2)
             {
                 Touch touchTwo = Input.GetTouch(1);
-                if(touchOne.phase == TouchPhase.Began || touchTwo.phase == TouchPhase.Began)
+                if (touchOne.phase == TouchPhase.Began || touchTwo.phase == TouchPhase.Began)
                 {
                     initialTouchPos = touchTwo.position - touchOne.position;
                 }
 
-                if(touchOne.phase ==TouchPhase.Moved || touchTwo.phase == TouchPhase.Moved)
+                if (touchOne.phase == TouchPhase.Moved || touchTwo.phase == TouchPhase.Moved)
                 {
-                    Vector2 currenTouchPos = touchTwo.position - touchOne.position;
-                    float angle = Vector2.SignedAngle(initialTouchPos, currenTouchPos);
+                    Vector2 currentTouchPos = touchTwo.position - touchOne.position;
+                    float angle = Vector2.SignedAngle(initialTouchPos, currentTouchPos);
                     item3DModel.transform.rotation = Quaternion.Euler(0, item3DModel.transform.eulerAngles.y - angle, 0);
-                    initialTouchPos = currenTouchPos;
+                    initialTouchPos = currentTouchPos;
                 }
             }
 
-            if(isOver3DModel && item3DModel == null && !isOverUI)
+            if (isOver3DModel && item3DModel == null && !isOverUI)
             {
-                GameManager.instance.ARPosition();
+                GameManager.Instance.ARPositionObjectMenu();
+
+                var currentAnchor = itemSelected.GetComponent<UnityARFoundationAnchorComponent>();
+                if (currentAnchor)
+                {
+                    Debug.Log("Try to Destroy Component");
+                    Destroy(currentAnchor);
+                }
+
+                Transform parentItem = itemSelected.transform.root;
+
+                if (parentItem.name == "AnchorRoot")
+                {
+                    Debug.Log("Try to Destroy GameObject");
+                    itemSelected.transform.parent = null;
+                    Destroy(parentItem.gameObject);
+                }
+
                 item3DModel = itemSelected;
                 itemSelected = null;
                 aRPointer.SetActive(true);
@@ -121,30 +139,75 @@ public class ARInteractionsManager : MonoBehaviour
                 item3DModel.transform.parent = aRPointer.transform;
             }
         }
+
+#if UNITY_EDITOR
+        ClickInput();
+#endif
     }
 
-    private bool isTapOver3DModel(Vector2 touchPosition)
+    private void ClickInput() 
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            isOver3DModel = IsTapOver3DModel(Input.mousePosition);
+            if (!isOver3DModel)
+            {
+                return;
+            }
+
+            GameManager.Instance.ARPositionObjectMenu();
+
+            var currentAnchor = itemSelected.GetComponent<UnityARFoundationAnchorComponent>();
+            if (currentAnchor)
+            {
+                Debug.Log("Try to Destroy Component");
+                Destroy(currentAnchor);
+            }
+
+            Transform parentItem = itemSelected.transform.root;
+            if (parentItem.name == "AnchorRoot")
+            {
+                Debug.Log("Try to Destroy GameObject");
+                itemSelected.transform.parent = null;
+                Destroy(parentItem.gameObject);
+            }
+
+            item3DModel = itemSelected;
+            itemSelected = null;
+            aRPointer.SetActive(true);
+            transform.position = item3DModel.transform.position;
+            item3DModel.transform.parent = aRPointer.transform;
+        }
+    }
+
+
+    private bool IsTapOver3DModel(Vector2 touchPosition)
     {
         Ray ray = aRCamera.ScreenPointToRay(touchPosition);
-        if(Physics.Raycast(ray, out RaycastHit hit3DModel))
+        if (Physics.Raycast(ray, out RaycastHit hit3DModel))
         {
-            if (hit3DModel.collider.CompareTag("Item"))
+            if (hit3DModel.collider.CompareTag("Tittle"))
             {
+
                 itemSelected = hit3DModel.transform.gameObject;
+                Debug.Log(itemSelected.name);
                 return true;
             }
+
         }
 
         return false;
     }
 
-    private bool isTapOverUI(Vector2 touchPosition)
+    private bool IsTapOverUI(Vector2 touchPosition)
     {
         PointerEventData eventData = new PointerEventData(EventSystem.current);
         eventData.position = new Vector2(touchPosition.x, touchPosition.y);
 
         List<RaycastResult> result = new List<RaycastResult>();
         EventSystem.current.RaycastAll(eventData, result);
+
+
 
         return result.Count > 0;
     }
@@ -154,6 +217,6 @@ public class ARInteractionsManager : MonoBehaviour
         Destroy(item3DModel);
         aRPointer.SetActive(false);
         //GameManager.instance.MainMenu();
-        GameManager.instance.BoxObjetosOpenMenu();
+        GameManager.Instance.BoxObjetosOpenMenu();
     }
 }

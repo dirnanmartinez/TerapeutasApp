@@ -8,6 +8,7 @@ public class Step
 
 	public int id { get; set; }
 	public string Groupal { get; set; }
+	public string anchorId { get; set; }
 	public string IsSupervised { get; set; }
 	public string InteractiveSpaceName { get; set; }
 	public List<StepDescriptions> stepDescriptions { get; set; }

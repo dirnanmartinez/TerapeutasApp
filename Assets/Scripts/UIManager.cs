@@ -24,17 +24,17 @@ public class UIManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        GameManager.instance.OnLoading += ActivateLoading;
-        GameManager.instance.OnLogin += ActivateLoginMenu;
-        GameManager.instance.OnRegister += ActivateRegisterMenu;
-        GameManager.instance.OnDescActivity += ActivateDescActivityMenu;
-        GameManager.instance.OnAsistenteInfo += ActivateAsistenteInfoMenu;
-        GameManager.instance.OnAsistenteStartPaso += ActivateAsistenteStartPasoMenu;
-        GameManager.instance.OnRegisterSpace += ActivateRegisterSpaceMenu;
-        GameManager.instance.OnBoxObjetosOpen += ActivateBoxObjetosOpenMenu;
-        GameManager.instance.OnARPositionObject += ActivateARPositionObjectMenu;
-        GameManager.instance.OnNextPaso += ActivateNextPasoCanvas;
-        GameManager.instance.OnEndActivity += ActivateEndActivityCanvas;
+        GameManager.Instance.OnLoading += ActivateLoading;
+        GameManager.Instance.OnLogin += ActivateLoginMenu;
+        GameManager.Instance.OnRegister += ActivateRegisterMenu;
+        GameManager.Instance.OnDescActivity += ActivateDescActivityMenu;
+        GameManager.Instance.OnAsistenteInfo += ActivateAsistenteInfoMenu;
+        GameManager.Instance.OnAsistenteStartPaso += ActivateAsistenteStartPasoMenu;
+        GameManager.Instance.OnRegisterSpace += ActivateRegisterSpaceMenu;
+        GameManager.Instance.OnBoxObjetosOpen += ActivateBoxObjetosOpenMenu;
+        GameManager.Instance.OnARPositionObject += ActivateARPositionObjectMenu;
+        GameManager.Instance.OnNextPaso += ActivateNextPasoCanvas;
+        GameManager.Instance.OnEndActivity += ActivateEndActivityCanvas;
     }
 
     private void ActivateLoading()

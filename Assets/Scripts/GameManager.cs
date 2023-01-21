@@ -83,6 +83,25 @@ public class GameManager : MonoBehaviour
     public Text bocadilloNombreActFin;
     public Text actFinName;
 
+
+    #region azure impletation
+
+    [SerializeField] private ServerManager serverManager;
+    public ServerManager ServerManager => serverManager;
+    public event Action OnLocalLoginSuccess;
+    public event Action<GameObject> OnARObjectPlaced;
+
+    public string CurrentARObjectNameOnStep;
+    public string CurrentAnchorIDToFind;
+    public string CurrentUserOnApp;
+
+    public int CurrentStepForSaveAnchor;
+
+
+    #endregion
+
+
+    #region Texts
     [Header("Datos de la actividad para mostrar en PRACTITIONER")]
     [SerializeField] private Text _tittle0;
     [SerializeField] private Text _tittle1;
@@ -186,6 +205,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Text _description48;
     [SerializeField] private Text _description49;
 
+    #endregion
     //VARIABLE PARA GUARDAR LAS ACTIVIDADES
     //hasta options
     List<ActivitiesByOwner> activitiesByOwner = new List<ActivitiesByOwner>();
@@ -223,20 +243,20 @@ public class GameManager : MonoBehaviour
 
 
     //Patron Singleton
-    public static GameManager instance;
+    public static GameManager Instance;
     private void Awake()
     {
-        if (instance != null && instance != this)
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
         }
         else
         {
-            instance = this;
+            Instance = this;
         }
     }
 
-    //START DE LA APLICACIÓN
+    //START DE LA APLICACIï¿½N
     void Start()
     {
         //Llamo a la pantalla de loading
@@ -285,7 +305,7 @@ public class GameManager : MonoBehaviour
         UnityWebRequest www = UnityWebRequest.Get("https://serviciotfg.azurewebsites.net/api/Activity2User/GetUsersAssigned2Activity?id=" + idActividad);
         yield return www.Send();
 
-        if (www.isError)
+        if (www.isNetworkError)
         {
             Debug.Log(www.error);
         }
@@ -300,7 +320,7 @@ public class GameManager : MonoBehaviour
         UnityWebRequest www = UnityWebRequest.Get("https://serviciotfg.azurewebsites.net/api/Steps/GetSteps?idActivity=" + idActividad);
         yield return www.Send();
 
-        if (www.isError)
+        if (www.isNetworkError)
         {
             Debug.Log(www.error);
         }
@@ -323,7 +343,7 @@ public class GameManager : MonoBehaviour
         UnityWebRequest www = UnityWebRequest.Get("https://serviciotfg.azurewebsites.net/api/Activities/GetActivities?owner=" + owner);
         yield return www.Send();
 
-        if (www.isError)
+        if (www.isNetworkError)
         {
             Debug.Log(www.error);
         }
@@ -358,7 +378,7 @@ public class GameManager : MonoBehaviour
         UnityWebRequest www = UnityWebRequest.Get("https://serviciotfg.azurewebsites.net/api/Steps/GetStep?id=" + stepId);
         yield return www.Send();
 
-        if (www.isError)
+        if (www.isNetworkError)
         {
             Debug.Log(www.error);
         }
@@ -366,12 +386,24 @@ public class GameManager : MonoBehaviour
         var stepInfo = JsonConvert.DeserializeObject<Step>(www.downloadHandler.text);
         stepInformation = stepInfo;
 
+        yield return null;
         AsistenteStartPasoMenu();
        
         
     }  //INFORMACION DE UN PASO EN CONCRETO
 
+    #region Azure Method
+    public void ARObjectPlaced(GameObject aRObject) 
+    {
+        Debug.Log("I wil try to Anchor this Object: " + aRObject.name);
+        OnARObjectPlaced?.Invoke(aRObject);
+    }
 
+    public void ActivityID(int ID) 
+    {
+        ApplicationAnchorsManagerServer.Instance.GetDataFromServer(ID.ToString(), GetTypeServer.Steps);
+    }
+#endregion
 
     public void Pruebas()
     {
@@ -383,14 +415,14 @@ public class GameManager : MonoBehaviour
 
     IEnumerator GetInteractiveSpaceByNameAndOwner()
     {
-        string name = "Mi habitación";
+        string name = "Mi habitaciï¿½n";
         string owner = "Terapeuta1@uclm.es";
 
         UnityWebRequest www = UnityWebRequest.Get("https://serviciotfg.azurewebsites.net/api/InteractiveSpace3D/GetInteractiveSpace3DByOwner?owner=" + owner + "&name=" + name);
-        //UnityWebRequest www = UnityWebRequest.Get("https://serviciotfg.azurewebsites.net/api/InteractiveSpace3D/GetInteractiveSpace3DByOwner?owner=Terapeuta1@uclm.es&name=Mi habitación");
+        //UnityWebRequest www = UnityWebRequest.Get("https://serviciotfg.azurewebsites.net/api/InteractiveSpace3D/GetInteractiveSpace3DByOwner?owner=Terapeuta1@uclm.es&name=Mi habitaciï¿½n");
         yield return www.Send();
 
-        if (www.isError)
+        if (www.isNetworkError)
         {
             Debug.Log(www.error);
         }
@@ -457,7 +489,7 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            messageInfo.text = "LAS CONTRASEÑAS NO COINCIDEN!! VUELVA A INTERARLO";
+            messageInfo.text = "LAS CONTRASEï¿½AS NO COINCIDEN!! VUELVA A INTERARLO";
         }
     }
 
@@ -496,6 +528,11 @@ public class GameManager : MonoBehaviour
             }
         }
         */
+
+
+        ApplicationAnchorsManagerServer.Instance.GetDataFromServer(emailInput.text, GetTypeServer.Activities);
+        OnLocalLoginSuccess?.Invoke();
+
         StartCoroutine("CollectActivitiesByOwner");
 
     }
@@ -511,7 +548,7 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("Error while logging in account");
         Debug.Log(error.GenerateErrorReport());
-        messageText.text = "EMAIL / CONTRASEÑA INCORRECTA!! VUELVA A INTENTARLO";
+        messageText.text = "EMAIL / CONTRASEï¿½A INCORRECTA!! VUELVA A INTENTARLO";
     }
 
 
@@ -604,7 +641,7 @@ public class GameManager : MonoBehaviour
         numActivitiesByOwner = 0; ///CREO
     }
 
-    
+
 
     public void Act1Aux0()
     {
@@ -722,6 +759,14 @@ public class GameManager : MonoBehaviour
         if(stepAux < stepsIds.Count())
         {
             StartCoroutine("GetStepsById");
+            
+            string anchorID = ApplicationAnchorsManagerServer.Instance.steps[stepAux].anchorId;
+            Debug.Log("I wil Try to Get anchor for step " + stepAux + " Anchor ID: " + anchorID);
+            if (anchorID != "0")
+            {
+                CurrentARObjectNameOnStep = ApplicationAnchorsManagerServer.Instance.steps[stepAux].stepDescriptions[0].entities[0].entityName;
+                ApplicationAnchorsManagerServer.Instance.TryToFindAnchor(anchorID);
+            }
             stepAux++ ;
         }
         else
@@ -796,10 +841,13 @@ public class GameManager : MonoBehaviour
         stepAux = 0;
         regUbicacionAntigua = null;
 
-        //stepsIds.Clear();
-        //step.Clear();
-        InfoActivityComplete();
-        //StartCoroutine("CollectActivitiesByOwner");
+        stepsIds.Clear();
+        step.Clear();
+        //InfoActivityComplete();
+        
+        StartCoroutine("CollectActivitiesByOwner");
+
+        ApplicationAnchorsManagerServer.Instance.DeleteARObjects();
     }
 
     public void CloseApp()
