@@ -36,7 +36,7 @@ public class ARInteractionsManager : MonoBehaviour
         }
     }
 
-
+    
     // Start is called before the first frame update
     void Start()
     {
@@ -218,5 +218,7 @@ public class ARInteractionsManager : MonoBehaviour
         aRPointer.SetActive(false);
         //GameManager.instance.MainMenu();
         GameManager.Instance.BoxObjetosOpenMenu();
+
+        
     }
 }

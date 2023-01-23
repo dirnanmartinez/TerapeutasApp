@@ -70,7 +70,9 @@ public class ApplicationAnchorsManagerServer : MonoBehaviour
         PostAnchorData(anchorID);
     }
 
-    private void PostAnchorData(string anchorID)
+
+
+    public void PostAnchorData(string anchorID)
     {
         StartCoroutine(PostServer(anchorID));
     }

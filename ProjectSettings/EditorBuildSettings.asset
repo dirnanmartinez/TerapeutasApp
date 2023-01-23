@@ -6,10 +6,10 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 0
-    path: Assets/ScriptableObject/Scenes/SampleScene.unity
+    path: Assets/Scenes/SampleScene.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
   - enabled: 1
-    path: Assets/ScriptableObject/Scenes/terapeuta.unity
+    path: Assets/Scenes/terapeuta.unity
     guid: 14a1977067749fd40b6b040b423b8ba9
   m_configObjects:
     UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: 29f64c15b4314c54bbef1f44b4608dd1, type: 2}

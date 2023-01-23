@@ -14,15 +14,13 @@ using GetUserInventoryRequest = PlayFab.ServerModels.GetUserInventoryRequest;
 using GetUserInventoryResult = PlayFab.ServerModels.GetUserInventoryResult;
 using DG.Tweening;
 using System.Linq;
-
-//PARA PRUEBAS
 using UnityEngine.Networking;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 public class GameManager : MonoBehaviour
 {
-
+    #region Actions
     public event Action OnLoading;
     public event Action OnLogin;
     public event Action OnRegister;
@@ -38,7 +36,9 @@ public class GameManager : MonoBehaviour
 
     public event Action OnItemsMenu;
     public event Action OnARPosition;
+    #endregion
 
+    #region SerializeField
     [Header("Canvas")]
     [SerializeField] private GameObject loginCanvas;
     [SerializeField] private GameObject optionsCanvas;
@@ -102,7 +102,7 @@ public class GameManager : MonoBehaviour
 
 
     #region Texts
-    [Header("Datos de la actividad para mostrar en PRACTITIONER")]
+    [Header("Datos de la actividad para mostrar")]
     [SerializeField] private Text _tittle0;
     [SerializeField] private Text _tittle1;
     [SerializeField] private Text _tittle2;
@@ -206,6 +206,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Text _description49;
 
     #endregion
+
+    #endregion
+
+    #region Control de pasos
     //VARIABLE PARA GUARDAR LAS ACTIVIDADES
     //hasta options
     List<ActivitiesByOwner> activitiesByOwner = new List<ActivitiesByOwner>();
@@ -225,21 +229,7 @@ public class GameManager : MonoBehaviour
 
     //NEW
     InteractiveSpaces intSpace = new InteractiveSpaces();
-
-
-
-
-    //List<Activities> actividades = new List<Activities>();
-    //List<Activity2User> activity2User = new List<Activity2User>();
-    //List<Entity3D> entity3D = new List<Entity3D>();
-    //List<InteractiveSpaces> interactiveSpaces = new List<InteractiveSpaces>();
-    //List<ActivitiesById> activitiesById = new List<ActivitiesById>();
-    //int numActividades = 0;
-    //int numUsers = 0;
-    //int numEntity3D = 0;
-    //int numActivitiesById = 0;
-    //int numInteractiveSpaces = 0;
-    //int numStep = 0;
+    #endregion 
 
 
     //Patron Singleton
@@ -262,9 +252,10 @@ public class GameManager : MonoBehaviour
         //Llamo a la pantalla de loading
         LoadingMenu();
         //Llamo a collect Actividades
-    }   
+    }
 
     //MUESTRO PANTALLA DE LOADING
+    #region Pantallas Login/Register
     public void LoadingMenu()
     {
         OnLoading?.Invoke();
@@ -297,6 +288,9 @@ public class GameManager : MonoBehaviour
         OnRegister?.Invoke();
     }
 
+    #endregion
+
+    #region Llamadas Servidor
     IEnumerator CollectActivity2UserByActivityId()
     {
         int idActividad = idActividadSeleccionada;
@@ -391,8 +385,9 @@ public class GameManager : MonoBehaviour
        
         
     }  //INFORMACION DE UN PASO EN CONCRETO
+    #endregion
 
-    #region Azure Method
+    #region Metodos Azure
     public void ARObjectPlaced(GameObject aRObject) 
     {
         Debug.Log("I wil try to Anchor this Object: " + aRObject.name);
@@ -402,79 +397,22 @@ public class GameManager : MonoBehaviour
     public void ActivityID(int ID) 
     {
         ApplicationAnchorsManagerServer.Instance.GetDataFromServer(ID.ToString(), GetTypeServer.Steps);
-    }
-#endregion
 
-    public void Pruebas()
-    {
-
-        StartCoroutine("GetInteractiveSpaceByNameAndOwner");
-
+        activity = ID - 1;
+        idActividadSeleccionada = activitiesIds[activity];
+        StartCoroutine("CollectActivity2UserByActivityId");
+        StartCoroutine("CollectStepByActivtyId");
     }
 
-
-    IEnumerator GetInteractiveSpaceByNameAndOwner()
+    public void DeleteObject()
     {
-        string name = "Mi habitaci�n";
-        string owner = "Terapeuta1@uclm.es";
-
-        UnityWebRequest www = UnityWebRequest.Get("https://serviciotfg.azurewebsites.net/api/InteractiveSpace3D/GetInteractiveSpace3DByOwner?owner=" + owner + "&name=" + name);
-        //UnityWebRequest www = UnityWebRequest.Get("https://serviciotfg.azurewebsites.net/api/InteractiveSpace3D/GetInteractiveSpace3DByOwner?owner=Terapeuta1@uclm.es&name=Mi habitaci�n");
-        yield return www.Send();
-
-        if (www.isNetworkError)
-        {
-            Debug.Log(www.error);
-        }
-
-        var interactiveSpaceInfo = JsonConvert.DeserializeObject<InteractiveSpaces>(www.downloadHandler.text);
-        intSpace = interactiveSpaceInfo;
-
-        intSpace.id = interactiveSpaceInfo.id;
-        Debug.Log("id  " + interactiveSpaceInfo.id);
-        intSpace.Name = interactiveSpaceInfo.Name;
-        Debug.Log("Name  " + intSpace.Name);
-        intSpace.Description = interactiveSpaceInfo.Description;
-        Debug.Log("Description  " + intSpace.Description);
-        intSpace.Visibility = interactiveSpaceInfo.Visibility;
-        Debug.Log("Visibility  " + intSpace.Visibility);
-        intSpace.AnchorId = interactiveSpaceInfo.AnchorId;
-        Debug.Log("AnchorId  " + intSpace.AnchorId);
-        intSpace.Owner = interactiveSpaceInfo.Owner;
-        Debug.Log("Owner  " + intSpace.Owner);
-
-        //StartCoroutine("Upload");
+        string newAnchorAux = "0";
+        ApplicationAnchorsManagerServer.Instance.PostAnchorData(newAnchorAux);
     }
+    
+    #endregion
 
-    /*
-    IEnumerator Upload()
-    {
-        string newAnchor = "JAJAJA";
-        string str = "{ \n"+ "\"name\" : " + "\""+intSpace.Name+ "\"" + "," + "\n \"description\": " + "\""+intSpace.Description+ "\"" + "," + "\n \"visibility\": " + "\""+intSpace.Visibility + "\""+ "," + "\n \"anchorId\": " + "\""+newAnchor+ "\"" + "," + "\n \"owner\": " + "\""+intSpace.Owner+ "\"" + "," + "\n \"id\": " + "\""+intSpace.id+ "\"" + "\n }";
-        Debug.Log(str);
-        JObject json = JObject.Parse(str);
-
-
-        byte[] myData = System.Text.Encoding.UTF8.GetBytes();
-        //using (UnityWebRequest www = UnityWebRequest.Put("https://serviciotfg.azurewebsites.net/api/InteractiveSpace3D/PutInteractiveSpace3D", ))
-        {
-            yield return www.SendWebRequest();
-
-            if (www.result != UnityWebRequest.Result.Success)
-            {
-                Debug.Log(www.error);
-            }
-            else
-            {
-                Debug.Log("Upload complete!");
-            }
-        }
-    }*/
-
-    //INFORMACION DE UN ESPACIO INTERACTIVO
-    //CAMBIAR EL ANCHOR DEL ESPACIO INTERACTIVO
-
-
+    #region Login/Register
     public void RegisterButton()
     {
         if (password1InputRegister.text == password2InputRegister.text)
@@ -519,17 +457,6 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("Succesful login/account create!!");
 
-        /*
-        foreach (var acti in actividades.ToList())
-        {
-            if (acti.Owner != emailInput.text)
-            {
-                actividades.Remove(acti);
-            }
-        }
-        */
-
-
         ApplicationAnchorsManagerServer.Instance.GetDataFromServer(emailInput.text, GetTypeServer.Activities);
         OnLocalLoginSuccess?.Invoke();
 
@@ -550,7 +477,7 @@ public class GameManager : MonoBehaviour
         Debug.Log(error.GenerateErrorReport());
         messageText.text = "EMAIL / CONTRASE�A INCORRECTA!! VUELVA A INTENTARLO";
     }
-
+    #endregion
 
     public void ActivateOptionsMenu()
     {
@@ -620,10 +547,316 @@ public class GameManager : MonoBehaviour
                 _description5.text = actividad.Description;
                 i++;
             }
+            if (numActividad == 6)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle6.text = actividad.Name;
+                _description6.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 7)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle7.text = actividad.Name;
+                _description7.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 8)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle8.text = actividad.Name;
+                _description8.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 9)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle9.text = actividad.Name;
+                _description9.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 10)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle10.text = actividad.Name;
+                _description10.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 11)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle11.text = actividad.Name;
+                _description11.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 12)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle12.text = actividad.Name;
+                _description12.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 13)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle13.text = actividad.Name;
+                _description13.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 14)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle14.text = actividad.Name;
+                _description14.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 15)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle15.text = actividad.Name;
+                _description15.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 16)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle16.text = actividad.Name;
+                _description16.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 17)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle17.text = actividad.Name;
+                _description17.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 18)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle18.text = actividad.Name;
+                _description18.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 19)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle19.text = actividad.Name;
+                _description19.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 20)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle20.text = actividad.Name;
+                _description20.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 21)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle21.text = actividad.Name;
+                _description21.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 22)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle22.text = actividad.Name;
+                _description22.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 23)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle23.text = actividad.Name;
+                _description23.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 24)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle24.text = actividad.Name;
+                _description24.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 25)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle25.text = actividad.Name;
+                _description25.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 26)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle26.text = actividad.Name;
+                _description26.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 27)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle27.text = actividad.Name;
+                _description27.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 28)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle28.text = actividad.Name;
+                _description28.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 29)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle29.text = actividad.Name;
+                _description29.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 30)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle30.text = actividad.Name;
+                _description30.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 31)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle31.text = actividad.Name;
+                _description31.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 32)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle32.text = actividad.Name;
+                _description32.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 33)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle33.text = actividad.Name;
+                _description33.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 34)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle34.text = actividad.Name;
+                _description34.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 35)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle35.text = actividad.Name;
+                _description35.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 36)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle36.text = actividad.Name;
+                _description36.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 37)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle37.text = actividad.Name;
+                _description37.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 38)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle38.text = actividad.Name;
+                _description38.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 39)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle39.text = actividad.Name;
+                _description39.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 40)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle40.text = actividad.Name;
+                _description40.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 41)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle41.text = actividad.Name;
+                _description41.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 42)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle42.text = actividad.Name;
+                _description42.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 43)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle43.text = actividad.Name;
+                _description43.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 44)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle44.text = actividad.Name;
+                _description44.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 45)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle45.text = actividad.Name;
+                _description45.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 46)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle46.text = actividad.Name;
+                _description46.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 47)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle47.text = actividad.Name;
+                _description47.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 48)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle48.text = actividad.Name;
+                _description48.text = actividad.Description;
+                i++;
+            }
+            if (numActividad == 49)
+            {
+                optionsCanvas.transform.GetChild(0).GetChild(2).GetChild(0).GetChild(0).GetChild(i).transform.DOScale(new Vector3(1, 1, 1), 0.3f);
+                _tittle49.text = actividad.Name;
+                _description49.text = actividad.Description;
+                i++;
+            }
             numActividad++;
         }
-
-        
 
         descActivityCanvas.transform.GetChild(0).transform.DOScale(new Vector3(0, 0, 0), 0.3f);
 
@@ -641,8 +874,7 @@ public class GameManager : MonoBehaviour
         numActivitiesByOwner = 0; ///CREO
     }
 
-
-
+    /*
     public void Act1Aux0()
     {
         activity = 0;
@@ -685,6 +917,7 @@ public class GameManager : MonoBehaviour
         StartCoroutine("CollectActivity2UserByActivityId");
         StartCoroutine("CollectStepByActivtyId");
     }
+    */
 
     public void InfoActivityComplete() {
 
@@ -791,6 +1024,7 @@ public class GameManager : MonoBehaviour
         OnAsistenteStartPaso?.Invoke();
     }
 
+    #region Realidad Aumentada
     public void RegisterSpaceMenu()
     {
         if (regUbicacionAntigua != stepInformation.InteractiveSpaceName)
@@ -820,6 +1054,7 @@ public class GameManager : MonoBehaviour
         OnARPositionObject?.Invoke();
         Debug.Log("AR Position Object menu ACTIVATED");
     }
+    #endregion
 
     public void NextPasoMenuControlador()
     {
